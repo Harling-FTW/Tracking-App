@@ -1,12 +1,13 @@
 from django.urls import path, include
 from . import views
+from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework import routers
-from .views import Clientviewset, Orderviewset
+from .views import OrderList, ClientList, OrderDetail, ClientDetail
 
-router = routers.DefaultRouter()
-router.register('/Clients', Clientviewset)
-router.register('/Orders', Orderviewset)
 urlpatterns = [
-    path('', views.sumFeed),
-    path('pizza', include(router.urls)),
+    path('api/Orders/', OrderList.as_view()),
+    path('api/Clients/', ClientList.as_view()),
+    path('api/Orders/<int:pk>', OrderDetail.as_view()),
+    path('api/Clients/<int:pk>', ClientDetail.as_view(),)
 ]
+urlpatterns = format_suffix_patterns(urlpatterns)
