@@ -1,18 +1,23 @@
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
-from rest_framework import status
-from .serializer import ClientSerializer, OrderSerializer
+from rest_framework import status, permissions
+from .serializer import ClientSerializer, OrderSerializer, UserSerializer
 from .models import Clients, Orders
+from django.contrib.auth.models import User
+from .permissions import IsOwnerOrReadOnly
 # Create your views here.
 
 
 class OrderList(APIView):
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     def get(self, request, format=None):
         orders = Orders.objects.all()
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
+    
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
     def post(self, request, format=None):
         serializer = OrderSerializer(data=request.data)
@@ -22,7 +27,7 @@ class OrderList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ClientList(APIView):
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     def get(self, request, format=None):
         clients = Clients.objects.all()
         serializer = ClientSerializer(clients, many=True)
@@ -36,7 +41,7 @@ class ClientList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderDetail(APIView):
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     def get_object(self, pk):
         try:
             return Orders.objects.get(pk=pk)
@@ -62,7 +67,7 @@ class OrderDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ClientDetail(APIView):
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     def get_object(self, pk):
         try:
             return Clients.objects.get(pk=pk)
@@ -86,3 +91,13 @@ class ClientDetail(APIView):
         client = self.get_object(pk)
         client.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
